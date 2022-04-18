@@ -1,0 +1,201 @@
+<html>
+
+<head>
+    <title>THREE BIG!</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+</head>
+
+<body>
+
+    <div style="height: 600px; width: 800px;">
+        <canvas id="myChart" width="400" height="300"></canvas>
+    </div>
+
+    <script>
+        const CHART_COLORS = {
+            red: 'rgb(255, 99, 132)',
+            orange: 'rgb(255, 159, 64)',
+            yellow: 'rgb(255, 205, 86)',
+            green: 'rgb(75, 192, 192)',
+            blue: 'rgb(54, 162, 235)',
+            purple: 'rgb(153, 102, 255)',
+            grey: 'rgb(201, 203, 207)'
+        };
+
+        var ctx = document.getElementById('myChart');
+
+        const DATA_COUNT = 12;
+        const labels = [];
+        for (let i = 0; i < DATA_COUNT; ++i) {
+            labels.push(i.toString());
+        }
+        const datapoints = [100,200,300,300,400];
+        const data = {
+            labels: labels,
+            datasets: [
+                // {
+                //     label: 'Cubic interpolation (monotone)',
+                //     data: datapoints,
+                //     borderColor: CHART_COLORS.red,
+                //     fill: false,
+                //     // cubicInterpolationMode: 'monotone',
+                //     tension: 0.5
+                // }, 
+                // {
+                //     label: 'Cubic interpolation',
+                //     data: datapoints,
+                //     borderColor: CHART_COLORS.blue,
+                //     fill: false,
+                //     tension: 1
+                // }, 
+                {
+                    label: 'Linear interpolation (default)',
+                    data: datapoints,
+                    borderColor: CHART_COLORS.green,
+                    fill: false,
+                    tension: 0
+                }
+            ]
+        };
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Chart.js Line Chart - Cubic interpolation mode'
+                    },
+                },
+                interaction: {
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Price'
+                        },
+                        suggestedMin: 550,
+                        suggestedMax: 610
+                    }
+                }
+            },
+        };
+        const myChart = new Chart(ctx, config);
+        // var myChart = new Chart(ctx, {
+        //     type: 'line', //圖表類型
+        //     data: {
+        //         //標題
+        //         labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+        //         datasets: [{
+        //             label: '# test', //標籤
+        //             data: [12, 19, 3, 5, 2, 3], //資料
+        //             //圖表背景色
+        //             backgroundColor: [
+        //                 'rgba(255, 99, 132, 0.2)',
+        //                 'rgba(54, 162, 235, 0.2)',
+        //                 'rgba(255, 206, 86, 0.2)',
+        //                 'rgba(75, 192, 192, 0.2)',
+        //                 'rgba(153, 102, 255, 0.2)',
+        //                 'rgba(255, 159, 64, 0.2)'
+        //             ],
+        //             //圖表外框線色
+        //             borderColor: [
+        //                 'rgba(255, 99, 132, 1)',
+        //                 'rgba(54, 162, 235, 1)',
+        //                 'rgba(255, 206, 86, 1)',
+        //                 'rgba(75, 192, 192, 1)',
+        //                 'rgba(153, 102, 255, 1)',
+        //                 'rgba(255, 159, 64, 1)'
+        //             ],
+        //             //外框線寬度
+        //             borderWidth: 1
+        //         }]
+        //     },
+        //     options: {
+        //         scales: {
+        //             yAxes: [{
+        //                 ticks: {
+        //                     beginAtZero: true,
+        //                     responsive: true //符合響應式
+        //                 }
+        //             }]
+        //         }
+        //     }
+        // });
+
+        function queryStock(scode,qdate) {
+            $.ajax({
+                url: "http://thetatinformation.com/stockInfo",
+                data: JSON.stringify({
+                    time: qdate,
+                    stockCode: scode
+                }),
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                success: function (returnData) {
+                    console.log(returnData);
+                    localStorage.setItem(scode, JSON.stringify(returnData));
+
+                    var dt = returnData.data.map(x => { return { time: x[0], price: x[6] } });
+
+                    myChart.data.labels = dt.map(x=>x.time);
+                    myChart.data.datasets[0].data = dt.map(x=>x.price)
+
+                    myChart.update();
+                    // myChart.data.datasets.forEach((dataset) => {
+                    //     dataset.data.push(data);
+                    // });
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    console.log(xhr.status);
+                    console.log(thrownError);
+                }
+            });
+        }
+
+        function queryThreeBig() {
+            $.ajax({
+                url: "http://localhost/threeBigMonth",
+                data: JSON.stringify({
+                    time: "20220301",
+                    stockCode: "0"
+                }),
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json;charset=utf-8",
+                success: function (returnData) {
+                    console.log(returnData);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    console.log(xhr.status);
+                    console.log(thrownError);
+                }
+            });
+        }
+    </script>
+    <div>
+        <button onclick="queryThreeBig()">查詢三大法人</button>
+    </div>
+    <div>
+        <button onclick="queryStock('2330','20220315')">查詢個股資料</button>
+    </div>
+
+
+</body>
+
+</html>
